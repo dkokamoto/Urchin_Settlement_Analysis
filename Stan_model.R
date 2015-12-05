@@ -18,8 +18,8 @@ modelAR <-
   
   parameters {
     // process variables 
-    vector<lower= -10,upper= 10>[NP] beta_SP;
-    vector<lower= -10,upper= 10>[NP] beta_SF;
+    vector<lower= -100,upper= 100>[NP] beta_SP;
+    vector<lower= -100,upper= 100>[NP] beta_SF;
     
     vector<lower=0>[NS] L_sigma_SP;  
     cholesky_factor_corr[NS] L_Omega_SP; // 

@@ -1,6 +1,5 @@
 
-setwd("/Users/Dan/Copy/UrchinAnalyses/Data/")
-
+### load necessary packages 
 package.list<-c("abind","AER","bitops","car","chron","coda","colorspace","dichromat","digest","Formula",
                 "gdata","ggplot2","gpclib","gtable","gtools","Hmisc","labeling","lmtest","lubridate",
                 "memoise","munsell","mvtnorm","ncdf","plyr","proto","R.methodsS3","R.oo","R.utils","R2jags",
@@ -10,7 +9,9 @@ package.list<-c("abind","AER","bitops","car","chron","coda","colorspace","dichro
 lapply(package.list,library,character.only = T)
 
 ### load urchin data ###
-settlement <- read.csv("Invertebrate_Settlement_All_Years.csv",header=T)
+settlement <- read.csv("~/Copy/UrchinAnalyses/Data/Invertebrate_Settlement_All_Years.csv",header=T)
+
+### format dates, etc.
 settlement$DATE_RETRIEVED <- parse_date_time(settlement$DATE_RETRIEVED, "%Y-%m-%d")
 settlement$DATE_DEPLOYED<- parse_date_time(settlement$DATE_DEPLOYED, "%Y-%m-%d")
 
@@ -27,8 +28,9 @@ settlement$year_ret <- year(settlement$DATE_RETRIEVED)
 settlement$day_dep <- day(settlement$DATE_DEPLOYED)
 settlement$day_ret <- day(settlement$DATE_RETRIEVED)
 
+### get means 
 set.ag <- ddply(settlement, .(DATE_RETRIEVED,SITE,Duration),summarize, mean_sum= mean(S_FRANCISCANUS+S_PURPURATUS), mean_tot= mean(TOTAL_URCHINS))
-setwd("~/Copy/UrchinAnalyses/R Code")
+
 ### format data to estimate monthly means per brush per day
 settlement$SITE <- factor(settlement$SITE,levels= unique(settlement$SITE))
 settlement <- settlement[order(settlement$SITE,settlement$julian),]

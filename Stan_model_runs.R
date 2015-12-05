@@ -1,5 +1,6 @@
-library(rstan);library(ggplot2);library(MASS);library(gdata)
-setwd("/Users/Dan/Copy/UrchinAnalyses/Data/")
+
+setwd("~/Copy/UrchinAnalyses/R Code/Urchin_Settlement_Analysis/")
+
 rm(list=ls())
 package.list<-c("abind","AER","lubridate","bitops","car","chron","coda","colorspace","dichromat","digest","Formula",
                 "gdata","ggplot2","gpclib","gtable","gtools","Hmisc","labeling","lmtest","lubridate",
@@ -12,9 +13,8 @@ package.list<-c("abind","AER","lubridate","bitops","car","chron","coda","colorsp
 #lapply(package.list,install.packages)
 lapply(package.list,library,character.only=T)
 ### load data and the model 
-source("../R Code/Data_prep.R")
-source("../R Code/Stan_model.R")
-
+source("Stan_model.R")
+source("Data_prep.R")
 
 ### number of iterations and chains 
 n.chains =3
@@ -23,7 +23,7 @@ n.burnin=500
 set.seed <- 1234
 
 ### parameters to save
-params <- c("Omega","SP","SF","LSP","beta_SP","phi")
+params <- c("Omega_SP","Omega_SF","SP","SF","LSP","LSF","beta_SP","beta_SF","phi_SP","phi_SF")
 
 ### linear model matrix
 MM <- model.matrix(MID~factor(month_ret):factor(SITE)-1,data= data_mat)
@@ -60,4 +60,3 @@ postAR <- stan(model_code = modelAR,
                pars=params,
                iter = n.iter , warmup= n.burnin,chains =n.chains,
                verbose = FALSE,init="random",seed= set.seed)
-
