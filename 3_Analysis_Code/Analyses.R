@@ -1,6 +1,7 @@
 library(rstan);library(ggplot2);library(MASS);library(gdata)
-setwd("/Users/Dan/Copy/UrchinAnalyses/Data/")
-load("~/Desktop/postAR.RData")
+setwd("~Copy/UrchinAnalyses/Data/")
+
+load("postAR.RData") 
 rm(list=ls())
 package.list<-c("abind","AER","bitops","car","chron","coda","colorspace","dichromat","digest","Formula",
                 "gdata","ggplot2","gpclib","gtable","gtools","Hmisc","labeling","lmtest","lubridate",

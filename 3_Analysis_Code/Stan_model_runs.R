@@ -1,6 +1,4 @@
 
-setwd("~/Copy/UrchinAnalyses/R Code/Urchin_Settlement_Analysis/")
-
 rm(list=ls())
 package.list<-c("abind","AER","lubridate","bitops","car","chron","coda","colorspace","dichromat","digest","Formula",
                 "gdata","ggplot2","gpclib","gtable","gtools","Hmisc","labeling","lmtest","lubridate",
@@ -14,7 +12,7 @@ package.list<-c("abind","AER","lubridate","bitops","car","chron","coda","colorsp
 lapply(package.list,library,character.only=T)
 ### load data and the model 
 source("Stan_model.R")
-source("Data_prep.R")
+source("../2_Data_Formatting_Code/Data_prep.R")
 
 ### number of iterations and chains 
 n.chains =3
