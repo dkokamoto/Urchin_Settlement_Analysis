@@ -27,6 +27,8 @@ settlement$year_dep <- year(settlement$DATE_DEPLOYED)
 settlement$year_ret <- year(settlement$DATE_RETRIEVED)
 settlement$day_dep <- day(settlement$DATE_DEPLOYED)
 settlement$day_ret <- day(settlement$DATE_RETRIEVED)
+settlement$S_FRANCISCANUS[settlement$year_ret==2009&settlement$month_ret==04&settlement$day_ret==07&is.na(settlement$S_FRANCISCANUS)&!is.na(settlement$S_PURPURATUS)] <- 0
+settlement <- subset(settlement,!is.na(S_FRANCISCANUS)&!is.na(S_PURPURATUS)&!is.na(TOTAL_URCHINS))
 
 ### get means 
 set.ag <- ddply(settlement, .(DATE_RETRIEVED,SITE,Duration),summarize, mean_sum= mean(S_FRANCISCANUS+S_PURPURATUS), mean_tot= mean(TOTAL_URCHINS))
@@ -40,13 +42,15 @@ settlement<- subset(settlement,Duration>0)
 set.sum <- ddply(settlement,.(SITE,DATE_RETRIEVED,DATE_DEPLOYED,month_ret,year_ret,Duration),summarise, SP= sum(S_PURPURATUS),SF= sum(S_FRANCISCANUS),TOT= sum(TOTAL_URCHINS),NB= length(TOTAL_URCHINS))
 set.sum$ID <- 1:nrow(set.sum)
 
-set.sum$SP_EM <- with(set.sum,ifelse(SP+SF==0,0,SP/(SP+SF)*TOT))
-set.sum$SF_EM <- with(set.sum,ifelse(SP+SF==0,0,SF/(SP+SF)*TOT)/Duration)
-set.sum <- subset(set.sum, !is.na(SP)&!is.na(SF)&Duration<45)
+set.sum$SP_EM <- with(set.sum,ifelse(SP+SF==0&TOT>0,NA, ifelse(SP+SF==0,0,SP/(SP+SF)*TOT)/Duration))
+set.sum$SF_EM <- with(set.sum,ifelse(SP+SF==0&TOT>0,NA, ifelse(SP+SF==0,0,SF/(SP+SF)*TOT)/Duration))
+
+set.sum <- subset(set.sum, !is.na(TOT)&Duration<45)
 set.sum$SITE_NUM <- as.numeric(set.sum$SITE)
 set.sum$M1 <- cos(2*pi*set.sum$month_ret/12)
 set.sum$M2 <- cos(2*pi*set.sum$month_ret/12)
 set.sum$monyr <- set.sum$month_ret+(set.sum$year_ret-1990)*12
+
 head(set.sum)
 
 site_levels <- c("Anacapa[SB]","Fort Bragg[NorCal]","Gaviota[SB]","Ocean Beach[SD]","Ellwood[SB]","Stearns Wharf[SB]","Scripps[SD]")

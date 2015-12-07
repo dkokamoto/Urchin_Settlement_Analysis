@@ -1,5 +1,6 @@
 library(rstan);library(ggplot2);library(MASS);library(gdata)
 setwd("/Users/Dan/Copy/UrchinAnalyses/Data/")
+load("~/Desktop/postAR.RData")
 rm(list=ls())
 package.list<-c("abind","AER","bitops","car","chron","coda","colorspace","dichromat","digest","Formula",
                 "gdata","ggplot2","gpclib","gtable","gtools","Hmisc","labeling","lmtest","lubridate",
@@ -10,16 +11,15 @@ lapply(package.list,library,character.only = T)
 ### now run "Stan_model_runs.R" ###
 
 ### generate monthly mean settlement from the data
-set.ag <- ddply(set.sum,.(monyr,SITE,month_ret,year_ret),summarise, mean_SP = mean(ifelse(I(SP+SF)>0,SP/(SP+SF)*TOT,0)/Duration/NB,na.rm= TRUE))
+set.ag <- ddply(set.sum,.(monyr,SITE,month_ret,year_ret),summarise, mean_SP = mean(ifelse(I(SP+SF)>0,SP/(SP+SF)*TOT,0)/Duration/NB,na.rm= TRUE),mean_SF = mean(ifelse(I(SP+SF)>0,SF/(SP+SF)*TOT,0)/Duration/NB,na.rm= TRUE))
+
+
 
 params <- extract(postAR)
-sp2 <- 
-
-matplot(sp2, type= "l")
 
 ### settlement partial autocorrelation function
-phi_SP <- Fit.test$par[names(Fit.test$par)%in%paste("phi_SP","[",1:data$NS,"]",sep= "")]
-phi_SF <- Fit.test$par[names(Fit.test$par)%in%paste("phi_SF","[",1:data$NS,"]",sep= "")]
+phi_SP <-  apply(params$phi_SP, c(2), mean)
+phi_SF <- apply(params$phi_SF, c(2), mean)
 
 ### estimated mean (log-scale) purps and frans from the Stan posterior
 E_SP <- apply(exp(params$LSP), c(2,3), mean)
@@ -57,7 +57,7 @@ levelplot(seas_cor_SP)
 levelplot(seas_cor_SF)
 
 ### get correlation matrix into something we can plot
-SP_mod_df <- melt(seas_mod_SP, id.vars= "month",variable.name= "SITE",value.name= "Exp_seas_SP")
+SP_mod_df <- melt.data.frame(seas_mod_SP, id.vars= "month",variable.name= "SITE",value.name= "Exp_seas_SP")
 SP_mod_df$SP_U <- beta_SP_U 
 SP_mod_df$SP_L <- beta_SP_L
 SF_mod_df <- melt(seas_mod_SF, id.vars= "month",variable.name= "SITE",value.name= "Exp_seas_SF")
@@ -68,39 +68,79 @@ levels(seas_mod$SITE) <- site_levels
 seas_mod$SITE <- factor(seas_mod$SITE, levels= rev(levels(seas_mod$SITE)[c(7,4,1,6,5,3,2)]))
 
 
-### now get errors 
+### now get mean estimates 
 SP_mod <- apply(exp(params$SP), c(2,3), mean)
 SF_mod <- apply(exp(params$SF), c(2,3), mean)
+SP_mod_L <- apply(exp(params$SP), c(2,3),quantile, probs= c(0.025))
+SF_mod_L <- apply(exp(params$SF), c(2,3), quantile, probs= c(0.025))
+SP_mod_U <- apply(exp(params$SP), c(2,3),quantile, probs= c(0.975))
+SF_mod_U <- apply(exp(params$SF), c(2,3), quantile, probs= c(0.975))
 
-SP_mod[is.na(monyr.mat)] <- NA
-SP_mod <- data.frame(SP_mod)
-names(SP_mod) <- levels(set.sum$SITE)
-SP_mod$monyr <- 1:nrow(SP_mod)
+format.data <- function(x,name) {
+  x[is.na(monyr.mat)] <- NA
+  x <- data.frame(x)
+  names(x) <- levels(set.sum$SITE)
+  x$monyr <- 1:nrow(x)
+  x <- melt(x, id.vars= "monyr",value_name= name)
+  names(x) <- c("monyr","SITE",name)
+  return(x)
+}
 
-SF_mod[is.na(monyr.mat)] <- NA
-SF_mod <- data.frame(SF_mod)
-names(SF_mod) <- levels(set.sum$SITE)
-SF_mod$monyr <- 1:nrow(SF_mod)
+SP_mod <- format.data(SP_mod,"Est_SP")
+SF_mod <- format.data(SF_mod,"Est_SF")
+SP_mod_U <- format.data(SP_mod_U,"SP_U")
+SP_mod_L <- format.data(SP_mod_L, "SP_L")
+SF_mod_U <- format.data(SF_mod_U, "SF_U")
+SF_mod_L <- format.data(SF_mod_L, "SF_L")
 
-SP_mod_df <- melt(SP_mod, id.vars= "monyr",variable.name= "SITE",value.name= "Est_SP")
-SF_mod_df <- melt(SF_mod, id.vars= "monyr",variable.name= "SITE",value.name= "Est_SF")
-mod_df <- join(SP_mod_df,SF_mod_df)
+mod_df <- join(SP_mod,SF_mod)
+mod_df <- join(mod_df,SP_mod_U )
+mod_df <- join(mod_df,SP_mod_L )
+mod_df <- join(mod_df,SF_mod_U )
+mod_df <- join(mod_df,SF_mod_L )
+
+set_summary <- data.frame(expand.grid(SITE=levels(set.ag$SITE),monyr= min(set.ag$monyr):max(set.ag$monyr)))
 
 set.ag2 <- join(set.ag,mod_df, by = c("SITE","monyr"))
-set.ag$MONTH <- set.ag$month_ret
-set.ag$YEAR <- set.ag$year_ret
-set.ag$month_ret2 <- with(set.ag,ifelse(month_ret==11,1,ifelse(month_ret==12,2,month_ret+2)))
+set.ag2$MONTH <- set.a2g$month_ret
+set.ag2$YEAR <- set.ag2$year_ret
+set.ag2$month_ret2 <- with(set.ag2,ifelse(month_ret==11,1,ifelse(month_ret==12,2,month_ret+2)))
 levels(set.ag2$SITE) <- levels(seas_mod$SITE)[c(5,1,2,6,3,4,7)]
 set.ag2$SITE <-factor(set.ag2$SITE, levels = rev(levels(set.ag2$SITE))[c(7,4,1,6,5,3,2)])   
+set_summary <- join(set_summary, set.ag2)
+set_summary$date <- with(set_summary,parse_date_time(paste(15,month_ret,year_ret,sep= "-"),"%d-%m-%y"))
+
+
 
 pacf_seas_SP <- data.frame(list(phi= paste0("phi==",round(phi_SP[c(7,4,1,6,5,3,2)],2)), SITE= levels(set.ag2$SITE)))
 pacf_seas_SF <- data.frame(list(phi= paste0("phi==",round(phi_SF[c(7,4,1,6,5,3,2)],2)), SITE= levels(set.ag2$SITE)))
 
-options <- theme(strip.text.y = element_text(size =17,angle= 0),
+ggplot(aes(monyr, mean_SF),data=set_summary)+
+  geom_ribbon(aes(ymin= SF_L, ymax= SF_U),fill= "grey70")+
+  geom_point(size= 1)+
+  geom_path(aes(y= Est_SF),colour= "red")+
+  theme_bw()+
+  facet_wrap(~SITE,scales= 'free_y')+
+  options
+  
+ggplot(aes(monyr, mean_SP),data=set_summary)+
+  geom_ribbon(aes(ymin= SP_L, ymax= SP_U),fill= "grey50")+
+  geom_point(size= 1)+
+  geom_path(aes(y= Est_SP),colour= "red",size= 0.25)+
+  theme_bw()+
+  facet_wrap(~SITE,scales= 'free_y')
+
+
+
+
+
+
+
+options <- theme(strip.text.y = element_text(size =12,angle= 0),
                  axis.text.y = element_text( colour= "black",size =12),
                  axis.text.x = element_text(colour= "black",size =12),
-                 axis.title.y = element_text( colour= "black",size =20),
-                 axis.title.x = element_text(colour= "black",size =14),
+                 axis.title.y = element_text( colour= "black",size =12),
+                 axis.title.x = element_text(colour= "black",size =12),
                  panel.grid.minor = element_line(colour = NA),
                  panel.grid.major = element_line(colour = NA),
                  panel.margin= unit(.5,"lines"),
@@ -121,10 +161,10 @@ options <- theme(strip.text.y = element_text(size =17,angle= 0),
                  plot.margin = unit(rep(0.2, 4), "inches"))
 
 Season_patterns <- ggplot(aes(month,Exp_seas_SP),data= seas_mod)+
-  geom_ribbon(aes(ymax= SP_U, ymin= SP_L), fill= "grey90")+
+  geom_ribbon(aes(ymax= SP_U, ymin= SP_L), fill= "grey80")+
   geom_line()+
-  facet_grid(SITE~.,scales= "free_y")+
-  geom_point(aes(month_ret2,mean_SP),data= set.ag2, shape= 21, fill= "grey",alpha= 0.5)+
+  facet_wrap(~SITE,scales= "free_y",ncol=1)+
+  geom_point(aes(month_ret2,mean_SP),data= set.ag2,size= 1, shape= 21, fill= "grey",alpha= 0.5)+
   ylab(expression(paste("monthly settlement (# ",brush^-1," ",day^-1,")")))+
   xlab("")+
  # geom_text(aes(x= 10,y= 5,label = phi),parse= TRUE,data= pacf_seas,size =4)+
@@ -135,7 +175,7 @@ Season_patterns <- ggplot(aes(month,Exp_seas_SP),data= seas_mod)+
   scale_x_continuous(breaks= c(2,4,6,8,10,12),labels= c("Dec","Feb","Apr","Jun",
                                                         "Aug","Oct"),expand= c(0,0))
 
-pdf(width=5,height= 8.5,file= "~/Copy/UrchinAnalyses/Figures/Seas_patterns.pdf",family = "serif",pointsize = 16)
+pdf(width=3.5,height= 8.5,file= "~/Copy/UrchinAnalyses/Figures/Seas_patterns.pdf",family = "serif",pointsize = 16)
 Season_patterns
 dev.off()
 
@@ -312,7 +352,7 @@ fit1 <- rq(log(st_val)~MEI_win:SITE+SITE,data=sp_ann4,tau=c(0.14,0.86))
 sp_ann4$pred_l <- exp(predict(fit1)[,1])
 sp_ann4$pred_u <- exp(predict(fit1)[,2])
 sp_ann4$SITE <-factor(sp_ann4$SITE, levels= levels(sp_ann4$SITE)[c(2,1,3,5,6,4,7)]) 
-levels(sp_ann4$SITE) <- c("Ft Bragg[NorCal]","Anacapa[SB]","Gaviota[SB]","Ellwood[SB]","Strns Wharf[SB]","Ocn Bch[SD]","Scripps[SD]")
+levels(sp_ann4$SITE) <- c("Ft Bragg [NorCal]","Anacapa [SB]","Gaviota [SB]","Ellwood [SB]","Stearrns Wharf [SB]","Ocean Beach [SD]","Scripps [SD]")
 
 pdf(width = 13, height =2.8, file = "~/Copy/UrchinAnalyses/Figures/MEI_annual.pdf", family = "Times",pointsize = 20)                  
 ggplot(aes(MEIlag,st_val),dat= sp_ann4)+
