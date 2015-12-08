@@ -1,10 +1,7 @@
 
 ### load necessary packages 
-package.list<-c("abind","AER","bitops","car","chron","coda","colorspace","dichromat","digest","Formula",
-                "gdata","ggplot2","gpclib","gtable","gtools","Hmisc","labeling","lmtest","lubridate",
-                "memoise","munsell","mvtnorm","ncdf","plyr","proto","R.methodsS3","R.oo","R.utils","R2jags",
-                "R2WinBUGS","RColorBrewer","RCurl","reshape2","rjags","sandwich","scales","sp",
-                "stringr","timeDate","zoo","maps","maptools","classInt","rgeos","fields","rgdal")
+package.list<-c("abind","car","gdata","ggplot2","Hmisc","labeling","lubridate",
+                "mvtnorm","plyr","RColorBrewer","reshape2","scales","sp","rstan")
 
 lapply(package.list,library,character.only = T)
 

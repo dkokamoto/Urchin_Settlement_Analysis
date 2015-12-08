@@ -1,15 +1,12 @@
 library(rstan);library(ggplot2);library(MASS);library(gdata)
-setwd("~Copy/UrchinAnalyses/Data/")
-
-load("postAR.RData") 
 rm(list=ls())
-package.list<-c("abind","AER","bitops","car","chron","coda","colorspace","dichromat","digest","Formula",
-                "gdata","ggplot2","gpclib","gtable","gtools","Hmisc","labeling","lmtest","lubridate",
-                "memoise","munsell","mvtnorm","ncdf","plyr","proto","R.methodsS3","R.oo","R.utils","R2jags",
-                "R2WinBUGS","RColorBrewer","RCurl","reshape2","rjags","sandwich","scales","sp",
-                "stringr","timeDate","zoo","maps","maptools","classInt","rgeos","fields","rgdal")
+package.list<-c("abind","car","gdata","ggplot2","Hmisc","labeling","lubridate",
+                "mvtnorm","plyr","RColorBrewer","reshape2","scales","sp","rstan")
+
 lapply(package.list,library,character.only = T)
 ### now run "Stan_model_runs.R" ###
+source("./3_Analysis_Code/Stan_model_runs.R")
+load("~/Copy/UrchinAnalyses/Data/postAR.RData") 
 
 ### generate monthly mean settlement from the data
 set.ag <- ddply(set.sum,.(monyr,SITE,month_ret,year_ret),summarise, mean_SP = mean(ifelse(I(SP+SF)>0,SP/(SP+SF)*TOT,0)/Duration/NB,na.rm= TRUE),mean_SF = mean(ifelse(I(SP+SF)>0,SF/(SP+SF)*TOT,0)/Duration/NB,na.rm= TRUE))
@@ -58,7 +55,7 @@ levelplot(seas_cor_SP)
 levelplot(seas_cor_SF)
 
 ### get correlation matrix into something we can plot
-SP_mod_df <- melt.data.frame(seas_mod_SP, id.vars= "month",variable.name= "SITE",value.name= "Exp_seas_SP")
+SP_mod_df <- melt(seas_mod_SP, id.vars= "month",variable.name= "SITE",value.name= "Exp_seas_SP")
 SP_mod_df$SP_U <- beta_SP_U 
 SP_mod_df$SP_L <- beta_SP_L
 SF_mod_df <- melt(seas_mod_SF, id.vars= "month",variable.name= "SITE",value.name= "Exp_seas_SF")
@@ -94,47 +91,26 @@ SP_mod_L <- format.data(SP_mod_L, "SP_L")
 SF_mod_U <- format.data(SF_mod_U, "SF_U")
 SF_mod_L <- format.data(SF_mod_L, "SF_L")
 
-mod_df <- join(SP_mod,SF_mod)
-mod_df <- join(mod_df,SP_mod_U )
-mod_df <- join(mod_df,SP_mod_L )
-mod_df <- join(mod_df,SF_mod_U )
-mod_df <- join(mod_df,SF_mod_L )
-
-set_summary <- data.frame(expand.grid(SITE=levels(set.ag$SITE),monyr= min(set.ag$monyr):max(set.ag$monyr)))
-
+mod_df <- join_all(list(SP_mod,SF_mod,SP_mod_U,SP_mod_L,SF_mod_U,SF_mod_L), by= c("monyr","SITE"))
 set.ag2 <- join(set.ag,mod_df, by = c("SITE","monyr"))
-set.ag2$MONTH <- set.a2g$month_ret
+set.ag2$MONTH <- set.ag2$month_ret
 set.ag2$YEAR <- set.ag2$year_ret
+
+set_summary <- with(set.ag2, data.frame(expand.grid(SITE=levels(SITE),MONTH= min(MONTH):max(MONTH),YEAR= min(YEAR):max(YEAR))))
+
+
 set.ag2$month_ret2 <- with(set.ag2,ifelse(month_ret==11,1,ifelse(month_ret==12,2,month_ret+2)))
+set_summary <- join(set_summary, set.ag2)
+set_summary$date <- with(set_summary,parse_date_time(paste(15,MONTH,YEAR,sep= "-"),"%d-%m-%y"))
 levels(set.ag2$SITE) <- levels(seas_mod$SITE)[c(5,1,2,6,3,4,7)]
 set.ag2$SITE <-factor(set.ag2$SITE, levels = rev(levels(set.ag2$SITE))[c(7,4,1,6,5,3,2)])   
-set_summary <- join(set_summary, set.ag2)
-set_summary$date <- with(set_summary,parse_date_time(paste(15,month_ret,year_ret,sep= "-"),"%d-%m-%y"))
+set_summary$monyr <- set_summary$MONTH+(set_summary$YEAR-1990)*12
+set_summary$SF_U <- with(set_summary,ifelse(SF_U>0.5,mean_SF*1.2, SF_U))
 
 
 
 pacf_seas_SP <- data.frame(list(phi= paste0("phi==",round(phi_SP[c(7,4,1,6,5,3,2)],2)), SITE= levels(set.ag2$SITE)))
 pacf_seas_SF <- data.frame(list(phi= paste0("phi==",round(phi_SF[c(7,4,1,6,5,3,2)],2)), SITE= levels(set.ag2$SITE)))
-
-ggplot(aes(monyr, mean_SF),data=set_summary)+
-  geom_ribbon(aes(ymin= SF_L, ymax= SF_U),fill= "grey70")+
-  geom_point(size= 1)+
-  geom_path(aes(y= Est_SF),colour= "red")+
-  theme_bw()+
-  facet_wrap(~SITE,scales= 'free_y')+
-  options
-  
-ggplot(aes(monyr, mean_SP),data=set_summary)+
-  geom_ribbon(aes(ymin= SP_L, ymax= SP_U),fill= "grey50")+
-  geom_point(size= 1)+
-  geom_path(aes(y= Est_SP),colour= "red",size= 0.25)+
-  theme_bw()+
-  facet_wrap(~SITE,scales= 'free_y')
-
-
-
-
-
 
 
 options <- theme(strip.text.y = element_text(size =12,angle= 0),
@@ -160,6 +136,21 @@ options <- theme(strip.text.y = element_text(size =12,angle= 0),
                  panel.border= element_rect(fill= NA),
                  legend.key.width = unit(3,"lines"),
                  plot.margin = unit(rep(0.2, 4), "inches"))
+
+ggplot(aes(date, mean_SF),data=set_summary)+
+  geom_ribbon(aes(ymin= SF_L, ymax= SF_U),fill= "grey70")+
+  geom_point(size= 1)+
+  geom_path(aes(y= Est_SF),colour= "red")+
+  theme_bw()+
+  facet_wrap(~SITE,scales= 'free_y')+
+  options
+  
+ggplot(aes(date, mean_SP),data=subset(set_summary, mean_SP<25))+
+  geom_ribbon(aes(ymin= SP_L, ymax= SP_U),fill= "grey50")+
+  geom_point(size= 1)+
+  geom_path(aes(y= Est_SP),colour= "red",size= 0.25)+
+  theme_bw()+
+  facet_wrap(~SITE,scales= 'free_y')
 
 Season_patterns <- ggplot(aes(month,Exp_seas_SP),data= seas_mod)+
   geom_ribbon(aes(ymax= SP_U, ymin= SP_L), fill= "grey80")+

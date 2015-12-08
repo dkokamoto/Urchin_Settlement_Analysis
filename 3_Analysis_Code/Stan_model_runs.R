@@ -1,18 +1,15 @@
 
 rm(list=ls())
-package.list<-c("abind","AER","lubridate","bitops","car","chron","coda","colorspace","dichromat","digest","Formula",
-                "gdata","ggplot2","gpclib","gtable","gtools","Hmisc","labeling","lmtest","lubridate",
-                "memoise","munsell","mvtnorm","ncdf","plyr","proto","R.methodsS3","R.oo","R.utils","R2jags",
-                "R2WinBUGS","RColorBrewer","RCurl","reshape2","rjags","sandwich","scales","sp",
-                "stringr","timeDate","zoo","maps","maptools","classInt","rgeos","fields","rgdal")
+package.list<-c("abind","car","gdata","ggplot2","Hmisc","labeling","lubridate",
+                "mvtnorm","plyr","RColorBrewer","reshape2","scales","sp","rstan")
 
 ### install packages if you don't have them 
 ### not run
 #lapply(package.list,install.packages)
 lapply(package.list,library,character.only=T)
 ### load data and the model 
-source("Stan_model.R")
-source("../2_Data_Formatting_Code/Data_prep.R")
+source("./3_Analysis_Code/Stan_model.R")
+source("./2_Data_Formatting_Code/Data_prep.R")
 
 ### number of iterations and chains 
 n.chains =3
@@ -46,15 +43,15 @@ data <- with(set.sum,list(
   NP = dim(MM)[2]
 ))
 
-### compile the models
-opt_modelAR<-stan_model(model_code=modelAR)
-
-### optimize for Max Likelihood (might take a few attemps... )
-Fit.test <- optimizing(opt_modelAR,data= data,iter=10000)
-
-### estimate posterior 
-postAR <- stan(model_code = modelAR, 
-               data=data,
-               pars=params,
-               iter = n.iter , warmup= n.burnin,chains =n.chains,
-               verbose = FALSE,init="random",seed= set.seed)
+# ### compile the models
+# opt_modelAR<-stan_model(model_code=modelAR)
+# 
+# ### optimize for Max Likelihood (might take a few attemps... )
+# Fit.test <- optimizing(opt_modelAR,data= data,iter=10000)
+# 
+# ### estimate posterior 
+# postAR <- stan(model_code = modelAR, 
+#                data=data,
+#                pars=params,
+#                iter = n.iter , warmup= n.burnin,chains =n.chains,
+#                verbose = FALSE,init="random",seed= set.seed)
