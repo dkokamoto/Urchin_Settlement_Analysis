@@ -21,7 +21,7 @@ set.seed <- 1234
 params <- c("Omega_SP","Omega_SF","SP","SF","LSP","LSF","beta_SP","beta_SF","phi_SP","phi_SF")
 
 ### linear model matrix
-MM <- model.matrix(MID~factor(month_ret):factor(SITE)-1,data= data_mat)
+MM <- model.matrix(MID~factor(biweek):factor(SITE)-1,data= data_mat)
 Mt <- t(MM)
 dim(Mt) <- c(ncol(MM),7,nrow(MM)/7)
 MA <- aperm(Mt,c(3,2,1))
@@ -33,8 +33,8 @@ data <- with(set.sum,list(
   YSP = SP,
   NB = NB,
   NS = length(unique(SITE)),
-  NM = length(unique(data_mat$month+(data_mat$YEAR)*12)),
-  OBS_MONTH= monyr,
+  NM = length(unique(data_mat$biweek+(data_mat$YEAR)*26)),
+  OBS_MONTH= biweek_year,
   OBS_SITE= as.numeric(SITE),
   MM =MA,
   D= Duration,
@@ -44,14 +44,14 @@ data <- with(set.sum,list(
 ))
 
 # ### compile the models
-# opt_modelAR<-stan_model(model_code=modelAR)
+ opt_modelAR<-stan_model(model_code=modelAR)
 # 
 # ### optimize for Max Likelihood (might take a few attemps... )
-# Fit.test <- optimizing(opt_modelAR,data= data,iter=10000)
+ Fit.test <- optimizing(opt_modelAR,data= data,iter=10000)
 # 
 # ### estimate posterior 
-# postAR <- stan(model_code = modelAR, 
-#                data=data,
-#                pars=params,
-#                iter = n.iter , warmup= n.burnin,chains =n.chains,
-#                verbose = FALSE,init="random",seed= set.seed)
+ postAR <- stan(model_code = modelAR, 
+                data=data,
+                pars=params,
+                iter = n.iter , warmup= n.burnin,chains =n.chains,
+                verbose = FALSE,init="random",seed= set.seed)

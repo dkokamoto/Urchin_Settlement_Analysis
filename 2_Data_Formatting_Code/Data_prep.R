@@ -27,42 +27,38 @@ settlement$day_ret <- day(settlement$DATE_RETRIEVED)
 settlement$S_FRANCISCANUS[settlement$year_ret==2009&settlement$month_ret==04&settlement$day_ret==07&is.na(settlement$S_FRANCISCANUS)&!is.na(settlement$S_PURPURATUS)] <- 0
 settlement <- subset(settlement,!is.na(S_FRANCISCANUS)&!is.na(S_PURPURATUS)&!is.na(TOTAL_URCHINS))
 
-### get means 
-set.ag <- ddply(settlement, .(DATE_RETRIEVED,SITE,Duration),summarize, mean_sum= mean(S_FRANCISCANUS+S_PURPURATUS), mean_tot= mean(TOTAL_URCHINS))
-
-### format data to estimate monthly means per brush per day
+### format data to estimate collection period means per brush per day
 settlement$SITE <- factor(settlement$SITE,levels= unique(settlement$SITE))
 settlement <- settlement[order(settlement$SITE,settlement$julian),]
 settlement$diff <- as.numeric(settlement$Duration)
 settlement <- drop.levels(settlement)
 settlement<- subset(settlement,Duration>0)
 set.sum <- ddply(settlement,.(SITE,DATE_RETRIEVED,DATE_DEPLOYED,month_ret,year_ret,Duration),summarise, SP= sum(S_PURPURATUS),SF= sum(S_FRANCISCANUS),TOT= sum(TOTAL_URCHINS),NB= length(TOTAL_URCHINS))
-set.sum$ID <- 1:nrow(set.sum)
 
-set.sum$SP_EM <- with(set.sum,ifelse(SP+SF==0&TOT>0,NA, ifelse(SP+SF==0,0,SP/(SP+SF)*TOT)/Duration))
-set.sum$SF_EM <- with(set.sum,ifelse(SP+SF==0&TOT>0,NA, ifelse(SP+SF==0,0,SF/(SP+SF)*TOT)/Duration))
 
+set.sum$SP_EM <- with(set.sum,ifelse(SP+SF==0&TOT>0,NA, ifelse(SP+SF==0,0,SP/(SP+SF)*TOT)/Duration/NB))
+set.sum$SF_EM <- with(set.sum,ifelse(SP+SF==0&TOT>0,NA, ifelse(SP+SF==0,0,SF/(SP+SF)*TOT)/Duration/NB))
+set.sum$julian <- julian(set.sum$DATE_RETRIEVED, origin = "1990-01-01")
+test2 <- ddply(set.sum,.(SITE), summarize, diff= diff(julian))
 set.sum <- subset(set.sum, !is.na(TOT)&Duration<45)
 set.sum$SITE_NUM <- as.numeric(set.sum$SITE)
-set.sum$M1 <- cos(2*pi*set.sum$month_ret/12)
-set.sum$M2 <- cos(2*pi*set.sum$month_ret/12)
-set.sum$monyr <- set.sum$month_ret+(set.sum$year_ret-1990)*12
-
-head(set.sum)
-
+set.sum$M1 <- cos(2*pi*set.sum$month_ret/26)
+set.sum$M2 <- cos(2*pi*set.sum$month_ret/26)
+set.sum$yday <- yday(set.sum$DATE_RETRIEVED)
+set.sum$biweek  <- as.numeric(floor(set.sum$yday/14)+1)
+set.sum$biweek  <- ifelse(set.sum$biweek>26,26,set.sum$biweek)
+set.sum$biweek_year  <- set.sum$biweek+(set.sum$year_ret-1990)*26
 site_levels <- c("Anacapa[SB]","Fort Bragg[NorCal]","Gaviota[SB]","Ocean Beach[SD]","Ellwood[SB]","Stearns Wharf[SB]","Scripps[SD]")
 
-year <- seq(from= 0,to= diff(range(set.sum$year_ret)),by= 1)
-month <- 1:12
+set.monyr <- ddply(set.sum,.(biweek_year,SITE),summarise, mean= mean(SP))
+
 site <- 1:7
-data_mat <- expand.grid(site=site,month_ret=month,YEAR=year)
+data_mat <- expand.grid(site=site,biweek=1:26, YEAR= 1990:2015)
 data_mat$SITE <- factor(data_mat$site,labels= levels(set.sum$SITE))
+data_mat$biweek_year  <- data_mat$biweek+(data_mat$YEAR-1990)*26
 data_mat$MID <- 1:nrow(data_mat)
-data_mat$year_ret <- data_mat$YEAR+1990
-data_mat$monyr <- data_mat$month+(data_mat$YEAR)*12
-data_mat$month <- data_mat$month_ret
 
-set.monyr <- ddply(set.sum,.(monyr,SITE),summarise, mean= mean(SP))
-set.monyr2 <- join(data_mat,set.monyr)
-monyr.mat <- dcast(set.monyr2[,c("monyr","SITE","mean")],monyr~SITE, fun = mean)[,-1]
+set.sum2 <- join(data_mat,set.monyr) 
 
+
+                                                                                   

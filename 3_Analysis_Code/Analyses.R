@@ -9,7 +9,7 @@ source("./3_Analysis_Code/Stan_model_runs.R")
 load("~/Copy/UrchinAnalyses/Data/postAR.RData") 
 
 ### generate monthly mean settlement from the data
-set.ag <- ddply(set.sum,.(monyr,SITE,month_ret,year_ret),summarise, mean_SP = mean(ifelse(I(SP+SF)>0,SP/(SP+SF)*TOT,0)/Duration/NB,na.rm= TRUE),mean_SF = mean(ifelse(I(SP+SF)>0,SF/(SP+SF)*TOT,0)/Duration/NB,na.rm= TRUE))
+set.ag <- ddply(set.sum,.(monyr,SITE,month_ret,year_ret),summarise, mean_SP = mean(SP_EM, na.rm= T),mean_SF = mean(SF_EM, na.rm= T))
 
 
 
@@ -145,7 +145,7 @@ ggplot(aes(date, mean_SF),data=set_summary)+
   facet_wrap(~SITE,scales= 'free_y')+
   options
   
-ggplot(aes(date, mean_SP),data=subset(set_summary, mean_SP<25))+
+ggplot(aes(date, mean_SP),data=subset(set_summary,YEAR%in%c(2010:2012)))+
   geom_ribbon(aes(ymin= SP_L, ymax= SP_U),fill= "grey50")+
   geom_point(size= 1)+
   geom_path(aes(y= Est_SP),colour= "red",size= 0.25)+
