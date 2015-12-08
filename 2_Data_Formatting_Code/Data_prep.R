@@ -6,8 +6,7 @@ package.list<-c("abind","car","gdata","ggplot2","Hmisc","labeling","lubridate",
 lapply(package.list,library,character.only = T)
 
 ### load urchin data ###
-settlement <- read.csv("~/Copy/UrchinAnalyses/Data/Invertebrate_Settlement_All_Years.csv",header=T)
-
+settlement <- read.csv("./1_Data/Invertebrate_Settlement_All_Years.csv",header=T)
 ### format dates, etc.
 settlement$DATE_RETRIEVED <- parse_date_time(settlement$DATE_RETRIEVED, "%Y-%m-%d")
 settlement$DATE_DEPLOYED<- parse_date_time(settlement$DATE_DEPLOYED, "%Y-%m-%d")

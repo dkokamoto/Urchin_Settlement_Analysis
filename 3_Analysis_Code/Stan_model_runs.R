@@ -54,4 +54,4 @@ data <- with(set.sum,list(
                 data=data,
                 pars=params,
                 iter = n.iter , warmup= n.burnin,chains =n.chains,
-                verbose = FALSE,init="random",seed= set.seed)
+                verbose = FALSE,init="random",seed= set.seed,cores= n.chains)
