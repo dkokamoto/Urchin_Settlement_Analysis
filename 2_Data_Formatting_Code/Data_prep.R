@@ -49,7 +49,7 @@ set.sum$biweek  <- ifelse(set.sum$biweek>26,26,set.sum$biweek)
 set.sum$biweek_year  <- set.sum$biweek+(set.sum$year_ret-1990)*26
 site_levels <- c("Anacapa[SB]","Fort Bragg[NorCal]","Gaviota[SB]","Ocean Beach[SD]","Ellwood[SB]","Stearns Wharf[SB]","Scripps[SD]")
 
-set.monyr <- ddply(set.sum,.(biweek_year,SITE),summarise, mean= mean(SP))
+set.monyr <- ddply(set.sum,.(biweek_year,SITE),summarise, mean_= mean(SP))
 
 site <- 1:7
 data_mat <- expand.grid(site=site,biweek=1:26, YEAR= 1990:2015)
@@ -57,7 +57,8 @@ data_mat$SITE <- factor(data_mat$site,labels= levels(set.sum$SITE))
 data_mat$biweek_year  <- data_mat$biweek+(data_mat$YEAR-1990)*26
 data_mat$MID <- 1:nrow(data_mat)
 
-set.sum2 <- join(data_mat,set.monyr) 
+set.sum2 <- join(data_mat,set.sum) 
+obs_SF <- matrix(set.sum2$mean, ncol= 7, byrow= T)
 
 
                                                                                    
