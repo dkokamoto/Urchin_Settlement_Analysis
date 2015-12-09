@@ -145,7 +145,7 @@ ggplot(aes(date, mean_SF),data=set_summary)+
 dev.off()  
 
 pdf(width = 8, height =5, file = "4_Figures/Spurp_settlers.pdf", family = "Times",pointsize = 14)
-ggplot(aes(biweek_year, mean_SP),data=subset(set_summary,YEAR%in%c(2010:2012)))+
+ggplot(aes(biweek_year, mean_SP),data=set_summary)+
   geom_ribbon(aes(ymin= SP_L, ymax= SP_U),fill= "grey50")+
   geom_point(size= 1)+
   geom_path(aes(y= Est_SP),colour= "red",size= 0.25)+
