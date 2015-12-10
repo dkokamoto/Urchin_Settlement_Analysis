@@ -96,9 +96,11 @@ set.ag2$YEAR <- set.ag2$year_ret
 
 set_summary <- with(set.ag2, data.frame(expand.grid(SITE=levels(SITE),biweek= 1:26,YEAR= min(YEAR):max(YEAR))))
 set_summary$biweek_year<- set_summary$biweek+(set_summary$YEAR-1990)*26
+set_summary$yday<- round((set_summary$biweek-0.5)/26*365)
+set_summary$date <- with(set_summary,parse_date_time(paste(yday,YEAR,sep= "-"),"%j-%y"))
 
 set_summary <- join(set_summary, set.ag2)
-set_summary$date <- with(set_summary,parse_date_time(paste(15,MONTH,YEAR,sep= "-"),"%d-%m-%y"))
+
 levels(set.ag2$SITE) <- levels(seas_mod$SITE)[c(5,1,2,6,3,4,7)]
 set.ag2$SITE <-factor(set.ag2$SITE, levels = rev(levels(set.ag2$SITE))[c(7,4,1,6,5,3,2)])   
 
@@ -134,23 +136,26 @@ options <- theme(strip.text.y = element_text(size =12,angle= 0),
                  legend.key.width = unit(3,"lines"),
                  plot.margin = unit(rep(0.2, 4), "inches"))
 
-pdf(width = 8, height =5, file = "4_Figures/SFran_settlers.pdf", family = "Times",pointsize = 14)
+pdf(width = 8, height =15, file = "4_Figures/SFran_settlers.pdf", family = "Times",pointsize = 14)
 ggplot(aes(date, mean_SF),data=set_summary)+
   geom_ribbon(aes(ymin= SF_L, ymax= SF_U),fill= "grey70")+
   geom_point(size= 1)+
   geom_path(aes(y= Est_SF),colour= "red")+
   theme_bw()+
-  facet_wrap(~SITE,scales= 'free_y')+
+  facet_wrap(~SITE,scales= 'free_y',ncol=1)+
+  ylab(expression(paste(italic("M. franciscanus"),  " ",brush^-1," ",day^-1)))+
   options
 dev.off()  
 
-pdf(width = 8, height =5, file = "4_Figures/Spurp_settlers.pdf", family = "Times",pointsize = 14)
-ggplot(aes(biweek_year, mean_SP),data=set_summary)+
+pdf(width = 8, height =15, file = "4_Figures/Spurp_settlers.pdf", family = "Times",pointsize = 14)
+ggplot(aes(date, mean_SP),data=set_summary)+
   geom_ribbon(aes(ymin= SP_L, ymax= SP_U),fill= "grey50")+
   geom_point(size= 1)+
   geom_path(aes(y= Est_SP),colour= "red",size= 0.25)+
   theme_bw()+
-  facet_wrap(~SITE,scales= 'free_y')
+  ylab(expression(paste(italic("S. purpuratus"),  " ",brush^-1," ",day^-1)))+
+  facet_wrap(~SITE,scales= 'free_y',ncol=1)+
+  options
 dev.off()
 
 Season_patterns <- ggplot(aes(month,Exp_seas_SP),data= seas_mod)+
