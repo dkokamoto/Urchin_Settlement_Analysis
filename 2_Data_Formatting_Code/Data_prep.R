@@ -1,4 +1,3 @@
-
 ### load necessary packages 
 package.list<-c("abind","car","gdata","ggplot2","Hmisc","labeling","lubridate",
                 "mvtnorm","plyr","RColorBrewer","reshape2","scales","sp","rstan")
@@ -6,8 +5,7 @@ package.list<-c("abind","car","gdata","ggplot2","Hmisc","labeling","lubridate",
 lapply(package.list,library,character.only = T)
 
 ### load urchin data ###
-settlement <- read.csv("~/Copy/UrchinAnalyses/Data/Invertebrate_Settlement_All_Years.csv",header=T)
-
+settlement <- read.csv("./1_Data/Invertebrate_Settlement_All_Years.csv",header=T)
 ### format dates, etc.
 settlement$DATE_RETRIEVED <- parse_date_time(settlement$DATE_RETRIEVED, "%Y-%m-%d")
 settlement$DATE_DEPLOYED<- parse_date_time(settlement$DATE_DEPLOYED, "%Y-%m-%d")
@@ -50,7 +48,11 @@ set.sum$biweek  <- ifelse(set.sum$biweek>26,26,set.sum$biweek)
 set.sum$biweek_year  <- set.sum$biweek+(set.sum$year_ret-1990)*26
 site_levels <- c("Anacapa[SB]","Fort Bragg[NorCal]","Gaviota[SB]","Ocean Beach[SD]","Ellwood[SB]","Stearns Wharf[SB]","Scripps[SD]")
 
+<<<<<<< HEAD
 set.monyr <- ddply(set.sum,.(biweek_year,SITE),summarise, mean_SP= mean( SP_EM),mean_SF= mean( SF_EM))
+=======
+set.monyr <- ddply(set.sum,.(biweek_year,SITE),summarise, mean_= mean(SP))
+>>>>>>> 5e19371b5b5d5f342bfd7f3dfe7f19717d2a7cbd
 
 site <- 1:7
 data_mat <- expand.grid(site=site,biweek=1:26, YEAR= 1990:2015)
@@ -58,7 +60,8 @@ data_mat$SITE <- factor(data_mat$site,labels= levels(set.sum$SITE))
 data_mat$biweek_year  <- data_mat$biweek+(data_mat$YEAR-1990)*26
 data_mat$MID <- 1:nrow(data_mat)
 
-set.sum2 <- join(data_mat,set.monyr) 
+set.sum2 <- join(data_mat,set.sum) 
+obs_SF <- matrix(set.sum2$mean, ncol= 7, byrow= T)
 
 
                                                                                    
