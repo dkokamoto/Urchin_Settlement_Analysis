@@ -50,7 +50,7 @@ set.sum$biweek  <- ifelse(set.sum$biweek>26,26,set.sum$biweek)
 set.sum$biweek_year  <- set.sum$biweek+(set.sum$year_ret-1990)*26
 site_levels <- c("Anacapa[SB]","Fort Bragg[NorCal]","Gaviota[SB]","Ocean Beach[SD]","Ellwood[SB]","Stearns Wharf[SB]","Scripps[SD]")
 
-set.monyr <- ddply(set.sum,.(biweek_year,SITE),summarise, mean= mean(SP))
+set.monyr <- ddply(set.sum,.(biweek_year,SITE),summarise, mean_SP= mean( SP_EM),mean_SF= mean( SF_EM))
 
 site <- 1:7
 data_mat <- expand.grid(site=site,biweek=1:26, YEAR= 1990:2015)
