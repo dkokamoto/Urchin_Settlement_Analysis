@@ -1,3 +1,8 @@
+######################################################
+###  Script to format data for analysis and plots  ###
+###  Author:  D.K. Okamoto                         ###
+######################################################
+
 ### load necessary packages 
 package.list<-c("abind","car","gdata","ggplot2","Hmisc","labeling","lubridate",
                 "mvtnorm","plyr","RColorBrewer","reshape2","scales","sp","rstan")
@@ -70,16 +75,36 @@ set.monyr <- set.sum %>%
                 summarise(mean_SP= mean( SP_EM),mean_SF= mean( SF_EM)) %>%
               mutate(site= factor(SITE,levels=levels(SITE),labels= site_levels))
 
-site <- 1:7
-data_mat2 <- expand.grid(site=site_levels,biweek=1:26, YEAR= 1990:2015) %>%
+site <- 1:nlevels(factor(set.monyr$SITE))
+data_mat <- expand.grid(site=site_levels,biweek=1:26, YEAR= 1990:2015) %>%
               mutate(site=factor(site,levels= site_levels),
-                               biweek_year  = biweek+(YEAR-1990)*26,
-                               MID = 1:nrow(data_mat)) %>%
-            join(set.monyr)  
+                     biweek_year  = biweek+(YEAR-1990)*26,
+                     MID= 1:length(site))
 
+set.sum2 <- join(data_mat,set.monyr) 
+
+### algebraic observed settlement 
 obs_SF <- matrix(set.sum2$mean_SF, ncol= 7, byrow= T)
 obs_SP <- matrix(set.sum2$mean_SP, ncol= 7, byrow= T)
 
+### linear model matrix
+MM <- model.matrix(MID~factor(biweek):factor(site)-1,data= data_mat)
+Mt <- t(MM)
+dim(Mt) <- c(ncol(MM),7,nrow(MM)/7)
+MA <- aperm(Mt,c(3,2,1))
 
-
-                                                                                   
+### list of data for model 
+data <- with(set.sum,list(
+  NO= nrow(set.sum),
+  YSP = SP,
+  NB = NB,
+  NS = length(unique(SITE)),
+  NM = length(unique(data_mat$biweek+(data_mat$YEAR)*26)),
+  OBS_MONTH= biweek_year,
+  OBS_SITE= as.numeric(SITE),
+  MM =MA,
+  D= Duration,
+  n= SP+SF,
+  N= TOT,
+  NP = dim(MM)[2]
+))
