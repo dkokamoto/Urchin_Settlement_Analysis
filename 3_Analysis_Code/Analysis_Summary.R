@@ -17,8 +17,8 @@ lapply(package.list,library,character.only = T)
 ### run data prep script
 source("2_Data_Formatting_Code/Data_prep.R")
 
-### load fitted model 
-load("/Users/Dan/Copy/UrchinAnalyses/Data/postAR.RData") 
+### load fitted model results
+load("5_Model_Output/postAR.RData") 
 
 ### generate monthly mean settlement from the data
 set.ag <- ddply(set.sum,.(biweek_year,SITE,month_ret,year_ret),summarise, mean_SP = mean(SP_EM, na.rm= T),mean_SF = mean(SF_EM, na.rm= T))
