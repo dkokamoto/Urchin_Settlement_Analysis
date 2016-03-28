@@ -55,6 +55,30 @@ log_frans_plot <- ggplot(aes(as.Date(date), mean_SF+1/14),data=subset(set_summar
 # log_frans_plot
 # dev.off()  
 
+anoms_SP <- ggplot(data= set_summary)+
+  geom_segment(aes(x=as.Date(date),yend=SP_anom,y=0,xend= as.Date(date),colour= factor(sign(SP_anom))))+facet_grid(SITE~.)+
+  geom_hline(yintercept= 0)+
+  options+
+  scale_x_date(date_breaks = "5 years", 
+               date_labels = "%y",
+               limits= c(as.Date("1990-01-01"),
+                         as.Date(parse_date_time("2016-12-31","%Y-%m-%d"))),
+               expand= c(0,0))+
+  theme(legend.position= "none")+
+  ylab("standardized settlement anomaly")
+
+anoms_SF <- ggplot(data= set_summary)+
+  geom_segment(aes(x=as.Date(date),yend=SF_anom,y=0,xend= as.Date(date),colour= factor(sign(SF_anom))))+facet_grid(SITE~.)+
+  geom_hline(yintercept= 0)+
+  options+
+  scale_x_date(date_breaks = "5 years", 
+               date_labels = "%y",
+               limits= c(as.Date("1990-01-01"),
+                         as.Date(parse_date_time("2016-12-31","%Y-%m-%d"))),
+               expand= c(0,0))+
+  theme(legend.position= "none")+
+  ylab("standardized settlement anomaly")
+
 log_purps_plot<- ggplot(aes(as.Date(date), mean_SP+1/14),data=set_summary)+
   geom_linerange(aes(ymin= SP_L+1/14, ymax= SP_U+1/14),colour= "pink",size=0.25)+
   geom_path(aes(y= Est_SP+1/14),colour= "red")+
@@ -75,7 +99,7 @@ Season_patterns <- ggplot(aes(biweek2,Exp_seas_SP+1/14),data= seas_mod)+
   geom_ribbon(aes(ymax= SP_U+1/14, ymin= SP_L+1/14), fill= "grey80")+
   geom_line()+
   facet_grid(SITE~.,scales= "free_y")+
-  geom_point(aes(biweek,mean_SP+1/14),data= set.ag2,size= 1, shape= 21, fill= "grey",alpha= 0.5)+
+  geom_point(aes(biweek,mean_SP+1/14),data= set.ag2,size= .25, shape= 21, fill= alpha("grey20",0.25),alpha= 0.25)+
   ylab(expression(paste("monthly settlement (# ",brush^-1," ",day^-1,")+1/14")))+
   xlab("")+
   # geom_text(aes(x= 10,y= 5,label = phi),parse= TRUE,data= pacf_seas,size =4)+
@@ -86,8 +110,8 @@ Season_patterns <- ggplot(aes(biweek2,Exp_seas_SP+1/14),data= seas_mod)+
   scale_x_continuous(breaks= c(2,4,6,8,10,12)*2,
                      labels= c("Dec","Feb","Apr","Jun","Aug","Oct"),expand= c(0,0));Season_patterns
 
-# pdf(width=3.5,height= 8.5,file= "~/Copy/UrchinAnalyses/Figures/Seas_patterns.pdf",family = "serif",pointsize = 16)
-# Season_patterns
-# dev.off()
+pdf(width=7,height= 8.5,file= "4_Figures/Seas_patterns.pdf",family = "serif",pointsize = 16)
+Season_patterns
+dev.off()
 
 

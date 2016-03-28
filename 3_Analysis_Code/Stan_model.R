@@ -19,16 +19,16 @@ modelAR <-
   
   parameters {
     // process variables 
-    vector<lower= -30,upper= 10>[NP] beta_SP;
-    vector<lower= -30,upper= 10>[NP] beta_SF;
+    vector<lower= -40,upper= 10>[NP] beta_SP;
+    vector<lower= -40,upper= 10>[NP] beta_SF;
     
     vector<lower=0>[NS] L_sigma_SP;  
     cholesky_factor_corr[NS] L_Omega_SP; // 
     vector<lower=0>[NS] L_sigma_SF;  
     cholesky_factor_corr[NS] L_Omega_SF; // 
       
-    vector<lower= -30,upper= 10>[NS] SP[NM];
-    vector<lower= -30,upper= 10>[NS] SF[NM]; 
+    vector<lower= -40,upper= 10>[NS] SP[NM];
+    vector<lower= -40,upper= 10>[NS] SF[NM]; 
     vector<lower= -0.9, upper= 0.9>[NS] phi_SP;
     vector<lower= -0.9, upper= 0.9>[NS] phi_SF;
   }
@@ -57,7 +57,6 @@ modelAR <-
     LSP[1] <- MM[1]*beta_SP;
     LSF[1] <- MM[1]*beta_SF;
     
-
     for (i in 2:NM){
       lag_res_SP[i] <- phi_SP .*(SP[i-1]-LSP[i-1]);
       LSP[i] <- MM[i]*beta_SP+lag_res_SP[i];

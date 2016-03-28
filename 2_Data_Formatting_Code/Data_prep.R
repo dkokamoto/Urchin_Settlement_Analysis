@@ -5,7 +5,8 @@
 
 ### load necessary packages 
 package.list<-c("abind","car","gdata","ggplot2","Hmisc","labeling","lubridate",
-                "mvtnorm","plyr","RColorBrewer","reshape2","scales","sp","rstan")
+                "mvtnorm","plyr","RColorBrewer","reshape2","scales","sp","rstan",
+                "dplyr")
 
 lapply(package.list,library,character.only = T)
 
