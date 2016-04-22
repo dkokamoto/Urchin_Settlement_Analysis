@@ -18,14 +18,12 @@ source("2_Data_Formatting_Code/Data_prep.R")
 
 ### number of iterations and chains 
 n.chains =2
-n.iter =1000
-n.burnin=500
+n.iter =200
+n.burnin=50
 set.seed <- 1234
 
 ### parameters to save
 params <- c("Omega_SP","Omega_SF","SP","SF","LSP","LSF","beta_SP","beta_SF","phi_SP","phi_SF")
-
-
 
 # ### compile the models
  opt_modelAR<-stan_model(model_code=modelAR)
