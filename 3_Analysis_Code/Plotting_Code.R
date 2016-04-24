@@ -10,6 +10,16 @@ source("3_Analysis_Code/Analysis_Summary.R")
 ### load plotting options 
 source("3_Analysis_Code/Ancillary_Funs.R")
 
+set_summary <- set_summary%>%
+  mutate(SP_anom= Est_SPL-Exp_seas_SP,
+         SF_anom= Est_SFL-Exp_seas_SF)
+         
+
+set_summary <- ddply(set_summary,.(SITE),function(df) 
+{df$roll_SP_anom <- rollapply(df$SP_anom,4, mean, na.rm = TRUE, fill = NA); return(df)})
+set_summary <- ddply(set_summary,.(SITE),function(df) 
+{df$roll_SF_anom <- rollapply(df$SF_anom,4, mean, na.rm = TRUE, fill = NA); return(df)})
+
 ### generate plots
 fran_plot <- ggplot(aes(as.Date(date), mean_SF),data=subset(set_summary,!(SITE=="Anacapa[SB]"&YEAR==2009)))+
   geom_linerange(aes(ymin= SF_L, ymax= SF_U),colour= "pink",size=0.25)+
@@ -55,9 +65,14 @@ log_frans_plot <- ggplot(aes(as.Date(date), mean_SF+1/14),data=subset(set_summar
 # log_frans_plot
 # dev.off()  
 
+
+
 anoms_SP <- ggplot(data= set_summary)+
-  geom_segment(aes(x=as.Date(date),yend=SP_anom,y=0,xend= as.Date(date),colour= factor(sign(SP_anom))))+facet_grid(SITE~.)+
+  geom_segment(aes(x=as.Date(date),yend=SP_anom,y=0,
+                   xend= as.Date(date),colour= factor(sign(SP_anom))))+
+  facet_grid(SITE~.)+
   geom_hline(yintercept= 0)+
+  geom_line(aes(y=roll_SP_anom,x=as.Date(date)))+
   options+
   scale_x_date(date_breaks = "5 years", 
                date_labels = "%y",
@@ -65,11 +80,15 @@ anoms_SP <- ggplot(data= set_summary)+
                          as.Date(parse_date_time("2016-12-31","%Y-%m-%d"))),
                expand= c(0,0))+
   theme(legend.position= "none")+
-  ylab("standardized settlement anomaly")
+  scale_y_continuous(breaks= c(-3,0,3,6))+
+  ylab("settlement anomaly");anoms_SP 
 
 anoms_SF <- ggplot(data= set_summary)+
-  geom_segment(aes(x=as.Date(date),yend=SF_anom,y=0,xend= as.Date(date),colour= factor(sign(SF_anom))))+facet_grid(SITE~.)+
+  geom_segment(aes(x=as.Date(date),yend=SF_anom,y=0,
+                   xend= as.Date(date),colour= factor(sign(SF_anom))))+
+  facet_grid(SITE~.)+
   geom_hline(yintercept= 0)+
+  geom_line(aes(y=roll_SF_anom,x=as.Date(date)))+
   options+
   scale_x_date(date_breaks = "5 years", 
                date_labels = "%y",
@@ -77,7 +96,8 @@ anoms_SF <- ggplot(data= set_summary)+
                          as.Date(parse_date_time("2016-12-31","%Y-%m-%d"))),
                expand= c(0,0))+
   theme(legend.position= "none")+
-  ylab("standardized settlement anomaly")
+  scale_y_continuous(breaks= c(-3,0,3,6))+
+  ylab("settlement anomaly");anoms_SF
 
 log_purps_plot<- ggplot(aes(as.Date(date), mean_SP+1/14),data=set_summary)+
   geom_linerange(aes(ymin= SP_L+1/14, ymax= SP_U+1/14),colour= "pink",size=0.25)+

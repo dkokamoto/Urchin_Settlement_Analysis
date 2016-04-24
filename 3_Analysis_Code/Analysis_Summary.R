@@ -23,7 +23,7 @@ load("5_Model_Output/postAR.RData")
 ### generate monthly mean settlement from the data
 set.ag <- ddply(set.sum,.(biweek_year,SITE,month_ret,year_ret),summarise, mean_SP = mean(SP_EM, na.rm= T),mean_SF = mean(SF_EM, na.rm= T))
 
-params <- extract(postAR)
+params <- extract(postAR2)
 
 ### settlement partial autocorrelation function
 phi_SP <-  apply(params$phi_SP, c(2), mean)
@@ -35,49 +35,51 @@ E_SP <- apply(exp(params$LSP), c(2,3), mean)
 E_SF <- apply(exp(params$LSF), c(2,3), mean)
 
 ### get monthly mean (seasonal) estimates
-beta_SP <- apply(exp(params$beta_SP),2, mean)
-beta_SF <- apply(exp(params$beta_SF),2, mean)
+beta_SP <- apply(params$beta_SP,1, function(x)MM[1:(26*7),]%*%x)
+beta_SF <- apply(params$beta_SF,1, function(x)MM[1:(26*7),]%*%x)
+beta_SP_mu <- apply(beta_SP,1,mean)
+beta_SF_mu <- apply(beta_SF,1,mean)
+beta_SP_U <-  apply(beta_SP,1, quantile, probs= 0.975)
+beta_SF_U <- apply(beta_SF,1,quantile, probs= 0.975)
+beta_SP_L <-apply(beta_SP,1,quantile, probs= 0.025)
+beta_SF_L <- apply(beta_SF,1, quantile, probs= 0.025)
 
-beta_SP_U <- apply(exp(params$beta_SP), c(2), quantile, probs= 0.975)
-beta_SF_U <- apply(exp(params$beta_SF), c(2), quantile, probs= 0.975)
-beta_SP_L <- apply(exp(params$beta_SP), c(2), quantile, probs= 0.025)
-beta_SF_L <- apply(exp(params$beta_SF), c(2), quantile, probs= 0.025)
+seas_mod_SP <- data.frame(matrix(beta_SP_mu,ncol= 7,byrow=T))
+seas_mod_SF <- data.frame(matrix(beta_SF_mu,ncol= 7,byrow=T))
+names(seas_mod_SP) <- levels(data_mat$site)
+names(seas_mod_SF) <- levels(data_mat$site)
+seas_mod_SF$biweek <- c(1:26)
+seas_mod_SP$biweek <- c(1:26)
 
-names(beta_SP) <- dimnames(MM)[2][[1]]
-names(beta_SF) <- dimnames(MM)[2][[1]]
-seas_mod_SP <- data.frame(matrix(beta_SP,ncol= 7))
-names(seas_mod_SP) <- levels(set.sum$SITE)
-seas_mod_SF <- data.frame(matrix(beta_SF,ncol= 7))
-names(seas_mod_SF) <- levels(set.sum$SITE)
-seas_mod_SF$biweek2 <- c(3:26,1:2)
-seas_mod_SP$biweek2 <- c(3:26,1:2)
 
 ### convert each into a seasonal correlation matrix
 seas_cor_SP <- matrix(cor(seas_mod_SP[1:7]), ncol= data$NS,
-                   dimnames= list(levels(set.sum$SITE),
-                                  levels(set.sum$SITE)))
+                   dimnames= list(levels(data_mat$site),
+                                  levels(data_mat$site)))
 seas_cor_SF <- matrix(cor(seas_mod_SF[1:7]), ncol= data$NS,
-                   dimnames= list(levels(set.sum$SITE),
-                                  levels(set.sum$SITE)))
+                   dimnames= list(levels(data_mat$site),
+                                  levels(data_mat$site)))
+
 ### show correlation matrix 
 levelplot(seas_cor_SP)
 levelplot(seas_cor_SF)
 
 ### get correlation matrix into something we can plot
-SP_mod_df <- melt(seas_mod_SP, id.vars= "biweek2",variable.name= "SITE",value.name= "Exp_seas_SP")
-SP_mod_df$SP_U <- beta_SP_U 
-SP_mod_df$SP_L <- beta_SP_L
-SF_mod_df <- melt(seas_mod_SF, id.vars= "biweek2",variable.name= "SITE",value.name= "Exp_seas_SF")
-SF_mod_df$SF_U <- beta_SF_U 
-SF_mod_df$SF_L <- beta_SF_L
+SP_mod_df <- melt(seas_mod_SP, id.vars= "biweek",variable.name= "SITE",value.name= "Exp_seas_SP")
+SP_mod_df$S_SP_U <- beta_SP_U 
+SP_mod_df$S_SP_L <- beta_SP_L
+SF_mod_df <- melt(seas_mod_SF, id.vars= "biweek",variable.name= "SITE",value.name= "Exp_seas_SF")
+SF_mod_df$S_SF_U <- beta_SF_U 
+SF_mod_df$S_SF_L <- beta_SF_L
 seas_mod <- join(SP_mod_df,SF_mod_df)
-levels(seas_mod$SITE) <- site_levels
 seas_mod$SITE <- factor(seas_mod$SITE, levels= rev(levels(seas_mod$SITE)[c(7,4,1,6,5,3,2)]))
 
 
 ### now get mean estimates 
 SP_mod <- apply(exp(params$SP), c(2,3), mean)
 SF_mod <- apply(exp(params$SF), c(2,3), mean)
+SPL_mod <- apply(params$SP, c(2,3), mean)
+SFL_mod <- apply(params$SF, c(2,3), mean)
 SP_mod_L <- apply(exp(params$SP), c(2,3),quantile, probs= c(0.025))
 SF_mod_L <- apply(exp(params$SF), c(2,3), quantile, probs= c(0.025))
 SP_mod_U <- apply(exp(params$SP), c(2,3),quantile, probs= c(0.975))
@@ -95,12 +97,16 @@ format.data <- function(x,name) {
 
 SP_mod <- format.data(SP_mod,"Est_SP")
 SF_mod <- format.data(SF_mod,"Est_SF")
+SPL_mod <- format.data(SPL_mod,"Est_SPL")
+SFL_mod <- format.data(SFL_mod,"Est_SFL")
+SP_mod_L <- format.data(SP_mod,"Est_SP_L")
+SF_mod_L <- format.data(SF_mod,"Est_SF_L")
 SP_mod_U <- format.data(SP_mod_U,"SP_U")
 SP_mod_L <- format.data(SP_mod_L, "SP_L")
 SF_mod_U <- format.data(SF_mod_U, "SF_U")
 SF_mod_L <- format.data(SF_mod_L, "SF_L")
 
-mod_df <- join_all(list(SP_mod,SF_mod,SP_mod_U,SP_mod_L,SF_mod_U,SF_mod_L), by= c("biweek_year","SITE"))
+mod_df <- join_all(list(SP_mod,SF_mod,SPL_mod,SFL_mod,SP_mod_U,SP_mod_L,SF_mod_U,SF_mod_L), by= c("biweek_year","SITE"))
 set.ag2 <- join(set.ag,mod_df, by = c("SITE","biweek_year"))
 set.ag2$MONTH <- set.ag2$month_ret
 set.ag2$YEAR <- set.ag2$year_ret
@@ -116,7 +122,7 @@ set_summary$yday<- round((set_summary$biweek-0.5)/26*365)
 set_summary$date <- with(set_summary,parse_date_time(paste(yday,YEAR,sep= "-"),"%j-%y"))
 
 set_summary <- join(set_summary, set.ag2)
-
+set_summary <- join(set_summary,seas_mod )
 
 set_summary$SF_U <- with(set_summary,ifelse(SF_U>0.5,mean_SF*1.2, SF_U))
 

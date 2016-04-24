@@ -18,8 +18,8 @@ source("2_Data_Formatting_Code/Data_prep.R")
 
 ### number of iterations and chains 
 n.chains =2
-n.iter =200
-n.burnin=50
+n.iter =1000
+n.burnin=500
 set.seed <- 1234
 
 ### parameters to save
@@ -29,15 +29,15 @@ params <- c("Omega_SP","Omega_SF","SP","SF","LSP","LSF","beta_SP","beta_SF","phi
  opt_modelAR<-stan_model(model_code=modelAR)
 # 
 # ### optimize for Max Likelihood (might take a few attemps... )
- Fit.test <- optimizing(opt_modelAR,data= data,iter=10000)
+Fit.test <- optimizing(opt_modelAR,data= data,iter=10000)
 # 
 # ### estimate posterior 
- postAR <- stan(model_code = modelAR, 
+ postAR2 <- stan(model_code = modelAR, 
                 data=data,
                 pars=params,
                 iter = n.iter , warmup= n.burnin,
-                chains =n.chains,
+                chains =4,
                 verbose = FALSE,init="random",
-                seed= set.seed,cores= 2,
+                seed= set.seed,cores= 4,
                 control= list(adapt_delta= 0.9,
                               max_treedepth=15))

@@ -59,8 +59,6 @@ set.sum <- settlement %>% group_by(SITE,DATE_RETRIEVED,DATE_DEPLOYED,month_ret,y
          SF_EM = as.numeric(ifelse(SP+SF==0&TOT>0,NA, ifelse(SP+SF==0,0,SF/(SP+SF)*TOT)/Duration/NB)),
          julian = julian(DATE_RETRIEVED, origin = "1990-01-01"),
          SITE_NUM = as.numeric(SITE),
-         M1 = cos(2*pi*biweek/26),
-         M2 = sin(2*pi*biweek/26),
          yday = yday(DATE_RETRIEVED),
          biweek  = floor(yday/14)+1) %>%
   mutate(biweek =ifelse(biweek>26,26,biweek),
@@ -80,8 +78,10 @@ data_mat <- expand.grid(site=site_levels,biweek=1:26, YEAR= 1990:2015) %>%
                      biweek_year  = biweek+(YEAR-1990)*26,
                      M1 = cos(2*pi*biweek/26),
                      M2 = sin(2*pi*biweek/26),
-                     M3 = sin(2*pi*biweek/13),
-                     M4 = sin(2*pi*biweek/13),
+                     M3 = cos(2*pi*biweek/26/2),
+                     M4 = sin(2*pi*biweek/26/2),
+                     M3 = cos(2*pi*biweek/26/4),
+                     M4 = sin(2*pi*biweek/26/4),
                      MID= 1:length(site))
 
 set.sum2 <- join(data_mat,set.monyr) 
@@ -105,7 +105,7 @@ data <- with(set.sum,list(
   NM = length(unique(data_mat$biweek+(data_mat$YEAR)*26)),
   OBS_MONTH= biweek_year,
   OBS_SITE= as.numeric(SITE),
-  MM =MA,
+  MM =MM,
   D= Duration,
   n= SP+SF,
   N= TOT,
