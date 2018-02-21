@@ -12,7 +12,7 @@ data {
   int OBS_MONTH[NO]; // continuous month-site observation index 
   int OBS_SITE[NO]; // month-site observation index 
   int PRED_MONTH[NM]; // month-site index associated with MA
-  matrix[NM*NS*2,(NP+1)*NS*2] X; // covariate matrix
+  matrix[NM*NS*2,(NP)*NS*2] X; // covariate matrix
   int xind[NM,NS,2]; // covariate matrix indices
   vector[NO] D; // number of days 
   vector[NO] NB; // number of brushes 
@@ -21,7 +21,7 @@ data {
 
 parameters {
   // process variables 
-  vector[(NP+1)*NS*2] beta;
+  vector[(NP)*NS*2] beta;
   
   // mean volatility
   vector<lower=0>[NS] sigma_S_mu[2]; 
@@ -98,7 +98,7 @@ model {
   }
   beta[1] ~ cauchy(0,10); //prior for the intercept following Gelman 2008
 
-  for(i in 2:((NP+1)*NS*2)){
+  for(i in ((NP-1)*NS*2):((NP)*NS*2)){
    beta[i] ~ cauchy(0,2.5);//prior for the slopes following Gelman 2008
   }
   // observation likelihood 
