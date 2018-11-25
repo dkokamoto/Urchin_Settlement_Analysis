@@ -7,9 +7,6 @@ package.list<-c("abind","car","gdata","ggplot2","Hmisc","labeling","lubridate",
                 "mvtnorm","plyr","RColorBrewer","reshape2","scales","sp","rstan",
                 "dplyr","glmmTMB","parallel")
 
-### install packages if you don't have them 
-### not run
-#lapply(package.list,install.packages)
 lapply(package.list,library,character.only=T)
 
 ### load urchin data ###
@@ -80,8 +77,7 @@ set.subset <- set.sum%>%
   mutate(biweek_year=biweek_year-min_biweek+1)
 
 ### bayesian model matrix
-ModMat <-model.matrix(~SITE+
-                        region:MEI_runlag2+
+ModMat <-model.matrix(~region:MEI_runlag2+
                         region:PDOlag+
                         region:NPGOlag-1, data= covariates)
 
@@ -116,15 +112,13 @@ Data <- with(set.subset,list(
 
 seed <- 12345
 
-mod <- stan_model(file= "3_Analysis_Code/Horseshoe_mod.stan") 
+mod <- stan_model(file= "2_Analysis_Code/Horseshoe_mod.stan") 
 
 ## run the Horsehshoe Regression
 system.time(p_global <- sampling(mod,
   data=Data,
-  #control= list(adapt_delta= 0.99,
-  #              max_treedepth= 15),
-  iter =100, warmup=50,
-  chains =1,cores = 1,
+  iter =1000, warmup=500,
+  chains =4,cores = 4,
   pars= c("beta")))
 
 a <- extract(p_global)
@@ -157,8 +151,7 @@ set.sum3 <- set.sum%>%
   mutate(biweek_year=biweek_year-min_biweek+1)
 
 ### bayesian model matrix
-ModMat <-model.matrix(~ SITE:species+
-                        region:chla_rollmean_30 +
+ModMat <-model.matrix(~ region:chla_rollmean_30 +
                         region:SST_rollmean_30 +
                         region:BK_stand_30 +
                         region:kelp_biomass +
@@ -167,12 +160,12 @@ ModMat <-model.matrix(~ SITE:species+
 ModMat <- ModMat[,apply(ModMat,2,sd)!=0]
 
 ### list of data for model
-Data <- with(set.sum3,list(
-  NO= nrow(set.sum3),
+Data <- with(set.subset,list(
+  NO= nrow(set.subset),
   YSP = SP,
   NS = length(unique(SITE)),
   NM = dim(sort_array)[1],
-  NSUB = length((1:nrow(set.su)[(SP+SF)<TOT]),
+  NSUB = length(1:nrow(set.subset)[(SP+SF)<TOT]),
   NT= m,
   NYM = 26,
   NP= ncol(ModMat),
@@ -190,13 +183,9 @@ Data <- with(set.sum3,list(
 
 seed <- 12345
 
-mod <- stan_model(file= "3_Analysis_Code/Horseshoe_mod.stan")
-
 ## run the Horsehshoe Regression
 system.time(p_local <- sampling(mod,
                                  data=Data,
                                  iter =1000, warmup=500,
                                  chains =4,cores = 4,
-                                control= list(adapt_delta=0.99,
-                                              max_treedepth=15),
                                  pars= c("beta")))

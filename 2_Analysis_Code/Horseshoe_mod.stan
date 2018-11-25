@@ -40,8 +40,8 @@ parameters {
   // seasonal and annual variance
   real<lower = 0> sigma[NS];
   
-  // process variables 
-  vector[NS] beta0;
+   // mean site settlement
+  row_vector<lower= -10, upper= 10>[NS] mu_S;
   
   // iid errors for residuals
   matrix<lower= -4, upper= 4>[NS,NM] e_z;
@@ -91,11 +91,10 @@ transformed parameters {
 
   // process error
   e = transpose(diag_pre_multiply(sigma_S_mu,L_Omega_S)*e_z);  
-  
   // put it all together
   for(i in 1:NM){
     for (j in 1:NS){
-      S[i,j]=beta0[j]+s_hat[xind[i,j]]+LS[PRED_MONTH[i],j]*sigma[j]-5+e[i,j];
+      S[i,j]=mu_S[j]+s_hat[xind[i,j]]+LS[PRED_MONTH[i],j]*sigma[j]+e[i,j]-5;
     }
   }
 
@@ -106,29 +105,24 @@ transformed parameters {
 }
 
 model { 
-  sigma ~ cauchy(0, 0.5);
+  sigma ~ cauchy(0.0, 0.5);
   
-  L_Omega_S ~ lkj_corr_cholesky(2);
+  L_Omega_S ~ lkj_corr_cholesky(2.0);
 
   for(i in 1:NS){
-    z_s[i]~ normal(0,1);
-    e_z[i] ~normal(0,1);
+    z_s[i]~ normal(0.0,1.0);
+    e_z[i] ~normal(0,1.0);
+    mu_S[i] ~ normal(0.0,5.0); 
   }
   
-  sigma_S_mu ~ cauchy(0,2.5);
-  
-  beta0 ~ cauchy(0,10); //prior for the intercept following Gelman 2008
- 
- // iid errors for process error
+  sigma_S_mu ~ cauchy(0.0,2.5);
 
-  
-  // iid errors for seasonal gaussian process
-  z ~ normal (0 , 1);
+  z ~ normal (0.0 , 1.0);
   r1_local ~ normal (0.0 , 1.0);
   r2_local ~ inv_gamma (0.5, 0.5);
   
   // half - t prior for tau
-  r1_global ~ normal (0.0 , 1);
+  r1_global ~ normal (0.0 , 1.0);
   r2_global ~ inv_gamma (0.5 , 0.5);
   
   // jeffrey's prior given subsampling
