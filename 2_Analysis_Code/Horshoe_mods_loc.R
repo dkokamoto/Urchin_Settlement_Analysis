@@ -130,15 +130,16 @@ Data <- with(set.subset,list(
   D= Duration,
   N= ifelse(ID>0,TOT,SP),
   sigma_scale= 0.25,
-  hs_scale= 3/12/sqrt(nrow(set.subset)),
+  m0=2,
   slab_scale= 1
 ))
 
-
-mod <- stan_model(file= "2_Analysis_Code/Horseshoe_mod_AR_FH.stan") 
+mod <- stan_model(file= "2_Analysis_Code/Horseshoe_mod.stan") 
 
 p_local <- sampling(mod,
     data=Data,
-    iter =1000, warmup=500,
+    iter =2000, warmup=1000,
+    control= list(adapt_delta= 0.95,
+                  max_treedepth = 15),
     chains =3,cores = 3,
-    pars= c("beta","phi"))
+    pars= c("beta","phi","mu_S"))

@@ -120,15 +120,19 @@ Data <- with(set.subset,list(
   D_seas = t(chol(Cstar)),
   D= Duration,
   N= ifelse(ID>0,TOT,SP),
-  sigma_scale= 0.25
+  sigma_scale= 0.25,
+  m0=3,
+  slab_scale= 1
 ))
 seed <- 12345
 
-mod <- stan_model(file= "2_Analysis_Code/Horseshoe_mod_AR_2.stan") 
+mod <- stan_model(file= "2_Analysis_Code/Horseshoe_mod.stan") 
 
 ## run the Horsehshoe Regression
 system.time(p_global <- sampling(mod,
   data=Data,
-  iter =1000, warmup=500,
+  iter =2000, warmup=1000,
+  control= list(adapt_delta= 0.95,
+                max_treedepth = 15),
   chains =3,cores = 3,
   pars= c("beta","sigma_S_mu","phi")))

@@ -24,7 +24,9 @@ data {
   int xind[NM,NS]; // covariate matrix indices
   vector[NO] D; // number of days 
   cholesky_factor_cov[NYM] D_seas;   // seasonal cholesky covariance factor
+  real<lower= 0> m0;
   real<lower= 0> sigma_scale;
+  real<lower= 0> slab_scale;
 }
 
 parameters {
@@ -54,7 +56,11 @@ parameters {
   vector<lower= 0,upper= 1>[NSP] theta;
   
   // iid errors for seasonal gaussian process
-  vector[NP] beta;
+  vector[NP] beta_tilde;
+  vector<lower=0>[NP] lambda;
+  real<lower=0> c2_tilde;
+  real<lower=0> tau_tilde;
+  real alpha;
 }
 
 transformed parameters { 
@@ -74,6 +80,18 @@ transformed parameters {
   // correlated errors 
   matrix[NM,NS] e;
   matrix[NM,NS] e_hat;
+  
+  vector[NP] beta;
+  vector[NP] lambda_tilde;
+  
+  real tau0 = (m0/(NP-m0))*(mean(sigma_S_mu)*sqrt(1.0*NM*NS));
+  real slab_scale2 = square(slab_scale);
+  real half_slab_df = 0.5 * 25;
+
+  real tau = tau0 * tau_tilde; 
+  real c2 = slab_scale2 * c2_tilde;
+  lambda_tilde  = sqrt( c2 * square(lambda) ./ (c2 + square(tau) * square(lambda)) );
+  beta = tau * lambda_tilde .* beta_tilde;
   
   // regression model 
   s_hat = X*beta;
@@ -116,7 +134,10 @@ model {
   
   sigma_S_mu ~ normal(0.0,sigma_scale);
 
-  beta ~ normal(0, 10);
+  beta_tilde ~ normal(0, 1);
+  lambda ~ cauchy(0, 1);
+  tau_tilde ~ cauchy(0, 1);
+  c2_tilde ~ inv_gamma(half_slab_df, half_slab_df);
 
   // jeffrey's prior given subsampling
   theta~beta(P1, P2);
